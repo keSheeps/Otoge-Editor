@@ -18,9 +18,11 @@ DIV_IN_LINE=4
 #↓program
 from tkinter import *
 from tkinter import ttk
+import pickle
 
 root = Tk()
 root.geometry(str(MAIN_RES_W)+"x"+str(MAIN_RES_H+CHART_Y))
+
 
 #control panel
 class ControlPanel(Frame):
@@ -31,10 +33,13 @@ class ControlPanel(Frame):
         self.isSnapEnabled = IS_SNAP_ENABLED
         self.divInMeasure = StringVar(value=str(DIV_IN_MEASURE))
         self.divInLine = StringVar(value=str(DIV_IN_LINE))
+        self.update = update
         #system buttons
         ttk.Button(self, text="Open", command=self.file_open).grid(column=0, row=0)
         ttk.Button(self, text="Save", command=self.file_save).grid(column=1, row=0)
-        ttk.Button(self, text="Config", command=self.config).grid(column=2, row=0)
+        ttk.Button(self, text="Open(Pickle)", command=file_open_pickle).grid(column=2, row=0)
+        ttk.Button(self, text="Save(Pickle)", command=file_save_pickle).grid(column=3, row=0)
+        ttk.Button(self, text="Config", command=self.config).grid(column=4, row=0)
         #select a kind of note
         for i in range(0,5):
             ttk.Button(self, text=NOTE_KINDS[i][0], command=self.setNoteLabel(i)).grid(column=i, row=1)
@@ -75,18 +80,21 @@ class ControlPanel(Frame):
     def previousPage(self):
         self.page = max(0,self.page-1)
         self.pageLabel["text"] = str(self.page)
+        self.update(0,0,0)
     def nextPage(self):
         self.page = self.page+1
         self.pageLabel["text"] = str(self.page)
+        self.update(0,0,0)
     def toggleSnap(self):
         self.isSnapEnabled = not self.isSnapEnabled
         self.snapButton["text"] = "Snap:On" if self.isSnapEnabled else "Snap:Off"
+        self.update(0,0,0)
     def getSelf(self):
         return self
 
 #chart editor
 class ChartEditor(Canvas):
-    def __init__(self,controlpanel,master=None):
+    def __init__(self,controlpanel,chart,number,master=None):
         #define variable
         self.canvasResW = MAIN_RES_W/4 #8分割の画面編成にするために
         self.canvasResH = MAIN_RES_H/2 #横4分割と縦2分割でそれぞれ1つのエディタを割り振る
@@ -96,15 +104,27 @@ class ChartEditor(Canvas):
         self.bind("<ButtonPress-1>",self.canvasClicked)
         self.bind("<Button1-Motion>", self.canvasDragged)
         self.bind("<ButtonRelease-1>",self.canvasReleased)
-        update(controlpanel)
-    def update(self,selectedNote,divInMeasure,divInLine,isSnapEnabled,mpmEntry):
-        self.selectedNote=selectedNote
-        self.divInMeasure = int(divInMeasure.get())
-        self.divInLine = int(divInLine.get())
-        self.isSnapEnabled = isSnapEnabled
-        self.mpm = mpmEntry.get()
+        self.update(controlpanel,chart,number=number)
+    def update(self,controlpanel,chart,number=0):
+        self.selectedNote=controlpanel.selectedNote
+        try:
+            self.divInMeasure = max(1,int(controlpanel.divInMeasure.get()))
+        except ValueError:
+            self.divInMeasure = 1
+        try:
+            self.divInLine = max(1,int(controlpanel.divInLine.get()))
+        except ValueError:
+            self.divInLine = 1
+        self.isSnapEnabled = controlpanel.isSnapEnabled
+        self.mpm = controlpanel.mpmEntry.get()
         self.measureDivH = self.canvasResH/self.divInMeasure
         self.lineDivW = self.canvasResW/self.divInLine
+        self.page = controlpanel.page
+        try:
+            self.notes = chart[self.page+number]
+        except IndexError:
+            chart.append([])
+            self.notes = chart[self.page+number]
         self.draw()
     def draw(self):
         self.delete('all')
@@ -123,22 +143,50 @@ class ChartEditor(Canvas):
         if(self.isSnapEnabled):
             self.lineBeginX=round(self.lineBeginX/self.lineDivW)*self.lineDivW
             self.lineBeginY=round(self.lineBeginY/self.measureDivH)*self.measureDivH
+            if(self.lineBeginY==0):
+                self.lineBeginY=self.measureDivH
     def canvasDragged(self,event):
-        self.lineEndX=event.x
+        self.lineEndX=min(self.canvasResW,max(0,event.x))
         if(self.isSnapEnabled):
             self.lineEndX=round(self.lineEndX/self.lineDivW)*self.lineDivW
-        if(self.lineBeginX != self.lineEndX):
-            self.canvas.create_line(self.lineBeginX,self.lineBeginY,self.lineEndX,self.lineBeginY,fill=NOTE_KINDS[self.selectedNote][1])
         self.draw()
+        if(self.lineBeginX != self.lineEndX):
+            self.create_line(self.lineBeginX,self.lineBeginY,self.lineEndX,self.lineBeginY,fill=NOTE_KINDS[self.selectedNote][1])
     def canvasReleased(self,event):
-        self.lineEndX=event.x
+        self.lineEndX=min(self.canvasResW,max(0,event.x))
         if(self.isSnapEnabled):
             self.lineEndX=round(self.lineEndX/self.lineDivW)*self.lineDivW
         self.notes.append([self.lineBeginX,self.lineEndX,self.lineBeginY,self.selectedNote,self.mpm])
         self.draw()
 
-controlpanel = ControlPanel(master=root)
+#↓procedural
+chartLower = [[],[],[],[]]
+chartUpper = [[],[],[],[]]
+def updateAll(arg1,arg2,arg3):
+    for i in range(0,4):
+        editorsLower[i].update(controlpanel,chartLower,number=i)
+        editorsUpper[i].update(controlpanel,chartUpper,number=i)
+
+def file_open_pickle():
+    global chartLower,chartUpper
+    with open('chart.pickle', mode='br') as fi:
+        chart = pickle.load(fi)
+        chartLower = chart[0]
+        chartUpper = chart[1]
+    updateAll(0,0,0)
+def file_save_pickle():
+    with open('chart.pickle', mode='wb') as fo:
+        pickle.dump([chartLower,chartUpper], fo)
+
+controlpanel = ControlPanel(master=root,update=updateAll)
 controlpanel.grid()
-editor1 = ChartEditor(master=root,controlpanel)
-editor1.place(x=0,y=CHART_Y)
+editorsLower = []
+editorsUpper = []
+for i in range(0,4):
+    editorLower = ChartEditor(controlpanel,chartLower,i,master=root)
+    editorUpper = ChartEditor(controlpanel,chartUpper,i,master=root)
+    editorsLower.append(editorLower)
+    editorsUpper.append(editorUpper)
+    editorsLower[i].place(x=(int)(i/2)*MAIN_RES_W/2             ,y=CHART_Y+(1-(i%2))*MAIN_RES_H/2)
+    editorsUpper[i].place(x=(int)(i/2)*MAIN_RES_W/2+MAIN_RES_W/4,y=CHART_Y+(1-(i%2))*MAIN_RES_H/2)
 root.mainloop()
