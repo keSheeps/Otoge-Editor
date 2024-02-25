@@ -21,6 +21,7 @@ class ControlPanel(Frame):
     def __init__(self,master=None,update=None):
         super().__init__(master)#Frame(master)
         self.selectedNote=const.SELECTED_NOTE
+        self.mpm = StringVar(value=str("30"))
         self.page=const.PAGE
         self.isSnapEnabled = const.IS_SNAP_ENABLED
         self.divInMeasure = StringVar(value=str(const.DIV_IN_MEASURE))
@@ -44,9 +45,7 @@ class ControlPanel(Frame):
         self.selectedNoteLabel = ttk.Label(self, text=const.NOTE_KINDS[const.SELECTED_NOTE][0])
         self.selectedNoteLabel.grid(column=1, row=2)
         ttk.Label(self, text="MPM:").grid(column=0, row=3)
-        self.mpmEntry = Entry(self,width=10)
-        self.mpmEntry.insert(0,"30")
-        self.mpmEntry.grid(column=1,row=3)
+        Entry(self,width=10,textvariable=self.mpm).grid(column=1,row=3)
         #page move
         ttk.Button(self, text="←", command=self.previousPage).grid(column=5, row=0)
         ttk.Button(self, text="→", command=self.nextPage).grid(column=6, row=0)
@@ -61,6 +60,7 @@ class ControlPanel(Frame):
         ttk.Label(self, text="Division in line:").grid(column=13, row=2)
         Entry(self,width=10,textvariable=self.divInLine).grid(column=14,row=2)
 
+        self.mpm.trace_add('write',update)
         self.divInMeasure.trace_add('write',update)
         self.divInLine.trace_add('write',update)
     def setNoteLabel(self,index):
@@ -110,7 +110,7 @@ class ChartEditor(Canvas):
         except ValueError:
             self.divInLine = 1
         self.isSnapEnabled = controlpanel.isSnapEnabled
-        self.mpm = controlpanel.mpmEntry.get()
+        self.mpm = controlpanel.mpm.get()
         self.measureDivH = self.canvasResH/self.divInMeasure
         self.lineDivW = self.canvasResW/self.divInLine
         self.page = controlpanel.page
@@ -135,6 +135,9 @@ class ChartEditor(Canvas):
             self.create_line(startX,startY,endX,startY,fill=const.NOTE_KINDS[note[3]][1])
             self.create_line(startX,startY-const.NOTE_EDGE,startX,startY+const.NOTE_EDGE,fill=const.NOTE_KINDS[note[3]][1],width=3)
             self.create_line(endX,startY-const.NOTE_EDGE,endX,startY+const.NOTE_EDGE,fill=const.NOTE_KINDS[note[3]][1],width=3)
+            print(const.NOTE_KINDS[note[3]][0])
+            if(const.NOTE_KINDS[note[3]][0]=="MPMChange"):
+                self.create_text(startX,startY,text=str(note[4]),anchor="sw")
         self.create_text(0,0,text=str(self.page+self.number)+self.text,anchor="nw")
     def canvasClicked(self,event):
         self.lineBeginX=event.x
