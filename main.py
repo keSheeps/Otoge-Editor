@@ -2,14 +2,14 @@
 #color
 BG_COLOR = "white"
 LINE_COLOR = "black"
-NOTE_KINDS=[["Tap","red"],["Slide_s","yellow"],["Slide_B","green"],["Swing","blue"],["MPMChange","purple"]]
+NOTE_KINDS=[["Erase","black"],["Tap","red"],["Slide_s","yellow"],["Slide_B","green"],["Swing","blue"],["MPMChange","purple"]]
 #about resolution
 MAIN_RES_W=1366
 MAIN_RES_H=768
 CHART_Y=100
 NOTE_EDGE=10
 #default values
-SELECTED_NOTE = 0;
+SELECTED_NOTE = 1;
 PAGE=0
 IS_SNAP_ENABLED=True
 DIV_IN_MEASURE=4
@@ -23,6 +23,12 @@ import pickle
 root = Tk()
 root.geometry(str(MAIN_RES_W)+"x"+str(MAIN_RES_H+CHART_Y))
 
+def intersect(p1, p2, p3, p4):#https://www.st-hakky-blog.com/entry/2018/09/05/012837 p1p2-p3p4
+    tc1 = (p1[0] - p2[0]) * (p3[1] - p1[1]) + (p1[1] - p2[1]) * (p1[0] - p3[0])
+    tc2 = (p1[0] - p2[0]) * (p4[1] - p1[1]) + (p1[1] - p2[1]) * (p1[0] - p4[0])
+    td1 = (p3[0] - p4[0]) * (p1[1] - p3[1]) + (p3[1] - p4[1]) * (p3[0] - p1[0])
+    td2 = (p3[0] - p4[0]) * (p2[1] - p3[1]) + (p3[1] - p4[1]) * (p3[0] - p2[0])
+    return tc1*tc2<0 and td1*td2<0
 
 #control panel
 class ControlPanel(Frame):
@@ -41,15 +47,15 @@ class ControlPanel(Frame):
         ttk.Button(self, text="Save(Pickle)", command=file_save_pickle).grid(column=3, row=0)
         ttk.Button(self, text="Config", command=self.config).grid(column=4, row=0)
         #select a kind of note
-        for i in range(0,5):
+        for i in range(0,len(NOTE_KINDS)): 
             ttk.Button(self, text=NOTE_KINDS[i][0], command=self.setNoteLabel(i)).grid(column=i, row=1)
         ttk.Label(self, text="Selected:").grid(column=0, row=2)
         self.selectedNoteLabel = ttk.Label(self, text=NOTE_KINDS[SELECTED_NOTE][0])
         self.selectedNoteLabel.grid(column=1, row=2)
-        ttk.Label(self, text="Value:").grid(column=3, row=2)
+        ttk.Label(self, text="MPM:").grid(column=0, row=3)
         self.mpmEntry = Entry(self,width=10)
         self.mpmEntry.insert(END,"30")
-        self.mpmEntry.grid(column=4,row=2)
+        self.mpmEntry.grid(column=1,row=3)
         #page move
         ttk.Button(self, text="←", command=self.previousPage).grid(column=5, row=0)
         ttk.Button(self, text="→", command=self.nextPage).grid(column=6, row=0)
@@ -76,6 +82,7 @@ class ControlPanel(Frame):
         def inner():
             self.selectedNote = index
             self.selectedNoteLabel["text"] = NOTE_KINDS[index][0]
+            self.update(0,0,0)
         return inner
     def previousPage(self):
         self.page = max(0,self.page-1)
@@ -94,11 +101,13 @@ class ControlPanel(Frame):
 
 #chart editor
 class ChartEditor(Canvas):
-    def __init__(self,controlpanel,chart,number,master=None):
+    def __init__(self,controlpanel,chart,number,text,master=None):
         #define variable
         self.canvasResW = MAIN_RES_W/4 #8分割の画面編成にするために
         self.canvasResH = MAIN_RES_H/2 #横4分割と縦2分割でそれぞれ1つのエディタを割り振る
         self.notes = []#note([beginX,EndX,BeginY,noteKind,MPM])
+        self.number = number
+        self.text = text
         #make canvas(self)
         super().__init__(master, width = self.canvasResW, height = self.canvasResH)#Canvas(master,width=~,height=~)
         self.bind("<ButtonPress-1>",self.canvasClicked)
@@ -120,6 +129,7 @@ class ChartEditor(Canvas):
         self.measureDivH = self.canvasResH/self.divInMeasure
         self.lineDivW = self.canvasResW/self.divInLine
         self.page = controlpanel.page
+        self.number = number
         try:
             self.notes = chart[self.page+number]
         except IndexError:
@@ -137,9 +147,11 @@ class ChartEditor(Canvas):
             self.create_line(note[0],note[2],note[1],note[2],fill=NOTE_KINDS[note[3]][1])
             self.create_line(note[0],note[2]-NOTE_EDGE,note[0],note[2]+NOTE_EDGE,fill=NOTE_KINDS[note[3]][1],width=3)
             self.create_line(note[1],note[2]-NOTE_EDGE,note[1],note[2]+NOTE_EDGE,fill=NOTE_KINDS[note[3]][1],width=3)
+        self.create_text(0,0,text=str(self.page+self.number)+self.text,anchor="nw")
     def canvasClicked(self,event):
         self.lineBeginX=event.x
         self.lineBeginY=event.y
+        if(NOTE_KINDS[self.selectedNote][0]=="Erase"): return
         if(self.isSnapEnabled):
             self.lineBeginX=round(self.lineBeginX/self.lineDivW)*self.lineDivW
             self.lineBeginY=round(self.lineBeginY/self.measureDivH)*self.measureDivH
@@ -147,16 +159,26 @@ class ChartEditor(Canvas):
                 self.lineBeginY=self.measureDivH
     def canvasDragged(self,event):
         self.lineEndX=min(self.canvasResW,max(0,event.x))
-        if(self.isSnapEnabled):
+        self.lineEndY=self.lineBeginY
+        if(NOTE_KINDS[self.selectedNote][0]=="Erase"):
+            self.lineEndY=min(self.canvasResH,max(0,event.y))
+        elif(self.isSnapEnabled):#don't snap when choose eraser
             self.lineEndX=round(self.lineEndX/self.lineDivW)*self.lineDivW
         self.draw()
         if(self.lineBeginX != self.lineEndX):
-            self.create_line(self.lineBeginX,self.lineBeginY,self.lineEndX,self.lineBeginY,fill=NOTE_KINDS[self.selectedNote][1])
+            self.create_line(self.lineBeginX,self.lineBeginY,self.lineEndX,self.lineEndY,fill=NOTE_KINDS[self.selectedNote][1])
     def canvasReleased(self,event):
         self.lineEndX=min(self.canvasResW,max(0,event.x))
-        if(self.isSnapEnabled):
-            self.lineEndX=round(self.lineEndX/self.lineDivW)*self.lineDivW
-        self.notes.append([self.lineBeginX,self.lineEndX,self.lineBeginY,self.selectedNote,self.mpm])
+        self.lineEndY=self.lineBeginY
+        if(NOTE_KINDS[self.selectedNote][0]!="Erase"):#not choosing eraser
+            if(self.isSnapEnabled):
+                self.lineEndX=round(self.lineEndX/self.lineDivW)*self.lineDivW
+            self.notes.append([self.lineBeginX,self.lineEndX,self.lineBeginY,self.selectedNote,self.mpm])
+        else:#erase
+            self.lineEndY=min(self.canvasResH,max(0,event.y))
+            for note in self.notes:
+                if intersect([note[0],note[2]],[note[1],note[2]],[self.lineBeginX,self.lineBeginY],[self.lineEndX,self.lineEndY]):#note([beginX,EndX,BeginY,noteKind,MPM])
+                    self.notes.remove(note)
         self.draw()
 
 #↓procedural
@@ -183,8 +205,8 @@ controlpanel.grid()
 editorsLower = []
 editorsUpper = []
 for i in range(0,4):
-    editorLower = ChartEditor(controlpanel,chartLower,i,master=root)
-    editorUpper = ChartEditor(controlpanel,chartUpper,i,master=root)
+    editorLower = ChartEditor(controlpanel,chartLower,i,"-Lower",master=root)
+    editorUpper = ChartEditor(controlpanel,chartUpper,i,"-Upper",master=root)
     editorsLower.append(editorLower)
     editorsUpper.append(editorUpper)
     editorsLower[i].place(x=(int)(i/2)*MAIN_RES_W/2             ,y=CHART_Y+(1-(i%2))*MAIN_RES_H/2)
