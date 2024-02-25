@@ -1,7 +1,9 @@
 ﻿import const
+import convert
 from tkinter import *
 from tkinter import ttk
 import pickle
+from os.path import dirname
 import subprocess
 
 root = Tk()
@@ -195,7 +197,9 @@ def file_save_pickle():
     with open('chart.pickle', mode='wb') as fo:
         pickle.dump([chartLower,chartUpper], fo)
 def preview():
-    subprocess.run(r'cd "C:\Users\kenta\source\repos\Otoge\Otoge\App" & "C:\Users\kenta\source\repos\Otoge\Otoge\App\Otoge(Debug).exe"',shell=True)
+    file_save_pickle()
+    convert.compile(str(dirname(const.EXE_DIR)),0)
+    subprocess.run(r'cd "'+dirname(const.EXE_DIR)+'" & "'+const.EXE_DIR+'"',shell=True)
 
 controlpanel = ControlPanel(master=root,update=updateAll)
 controlpanel.grid()

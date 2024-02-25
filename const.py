@@ -14,3 +14,5 @@ PAGE=0
 IS_SNAP_ENABLED=True
 DIV_IN_MEASURE=4
 DIV_IN_LINE=4
+#files
+EXE_DIR=r'C:\Users\kenta\source\repos\Otoge\Otoge\App\Otoge(Debug).exe'
