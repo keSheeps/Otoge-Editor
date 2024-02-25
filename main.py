@@ -30,9 +30,13 @@ class ControlPanel(Frame):
         ttk.Button(self, text="Preview", command=preview).grid(column=0, row=0)
         #ttk.Button(self, text="Open", command=self.file_open).grid(column=0, row=0)
         #ttk.Button(self, text="Save", command=self.file_save).grid(column=1, row=0)
+        ttk.Button(self, text="Save(Pickle)", command=file_save_pickle).grid(column=1, row=0)
         ttk.Button(self, text="Open(Pickle)", command=file_open_pickle).grid(column=2, row=0)
-        ttk.Button(self, text="Save(Pickle)", command=file_save_pickle).grid(column=3, row=0)
-        ttk.Button(self, text="Config", command=self.config).grid(column=4, row=0)
+        ttk.Label(self, text="Offset:").grid(column=3, row=0)
+        self.offsetEntry = Entry(self,width=10)
+        self.offsetEntry.insert(0,"0")
+        self.offsetEntry.grid(column=4,row=0)
+
         #select a kind of note
         for i in range(0,len(const.NOTE_KINDS)): 
             ttk.Button(self, text=const.NOTE_KINDS[i][0], command=self.setNoteLabel(i)).grid(column=i, row=1)
@@ -41,7 +45,7 @@ class ControlPanel(Frame):
         self.selectedNoteLabel.grid(column=1, row=2)
         ttk.Label(self, text="MPM:").grid(column=0, row=3)
         self.mpmEntry = Entry(self,width=10)
-        self.mpmEntry.insert(END,"30")
+        self.mpmEntry.insert(0,"30")
         self.mpmEntry.grid(column=1,row=3)
         #page move
         ttk.Button(self, text="←", command=self.previousPage).grid(column=5, row=0)
@@ -59,12 +63,6 @@ class ControlPanel(Frame):
 
         self.divInMeasure.trace_add('write',update)
         self.divInLine.trace_add('write',update)
-    def file_open(self):
-        print("placeholder-open")
-    def file_save(self):
-        print("placeholder-save")
-    def config(self):
-        print("placeholder-config")
     def setNoteLabel(self,index):
         def inner():
             self.selectedNote = index
@@ -192,13 +190,15 @@ def file_open_pickle():
         chart = pickle.load(fi)
         chartLower = chart[0]
         chartUpper = chart[1]
+        controlpanel.offsetEntry.delete(0,END)
+        controlpanel.offsetEntry.insert(0,chart[2])
     updateAll(0,0,0)
 def file_save_pickle():
     with open('chart.pickle', mode='wb') as fo:
-        pickle.dump([chartLower,chartUpper], fo)
+        pickle.dump([chartLower,chartUpper,controlpanel.offsetEntry.get()], fo)
 def preview():
     file_save_pickle()
-    convert.compile(str(dirname(const.EXE_DIR)),0)
+    convert.compile(str(dirname(const.EXE_DIR)),controlpanel.offsetEntry.get())
     subprocess.run(r'cd "'+dirname(const.EXE_DIR)+'" & ".\\'+basename(const.EXE_DIR)+'"',shell=True)
 
 controlpanel = ControlPanel(master=root,update=updateAll)

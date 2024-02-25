@@ -4,9 +4,10 @@ START_SEC=1
 #note([beginX,EndX,BeginY,noteKind,MPM])
 #chart[note,note,note,....]
 def compile(dir,offset):
-    with open(dir+'/test.cht',mode='w') as dest:
+    with open(dir+r'\test.cht',mode='w') as dest:
         with open('chart.pickle', mode='br') as fi:
-            allChart = pickle.load(fi)
+            data = pickle.load(fi)
+        allChart = [data[0],data[1]]
         dest.write("""/title:曲名
 title:
 /composer:作曲者名
@@ -17,7 +18,7 @@ designer:
 wav:test.wav
 /offset:ノートのタイミングを -:早くする +:遅くする (単位[s])
 offset:""")
-        dest.write(str(offset))
+        dest.write(offset)
         dest.write("\n")
 
         dest.write("""/MPM変化位置
