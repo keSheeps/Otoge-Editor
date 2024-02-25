@@ -135,7 +135,6 @@ class ChartEditor(Canvas):
             self.create_line(startX,startY,endX,startY,fill=const.NOTE_KINDS[note[3]][1])
             self.create_line(startX,startY-const.NOTE_EDGE,startX,startY+const.NOTE_EDGE,fill=const.NOTE_KINDS[note[3]][1],width=3)
             self.create_line(endX,startY-const.NOTE_EDGE,endX,startY+const.NOTE_EDGE,fill=const.NOTE_KINDS[note[3]][1],width=3)
-            print(const.NOTE_KINDS[note[3]][0])
             if(const.NOTE_KINDS[note[3]][0]=="MPMChange"):
                 self.create_text(startX,startY,text=str(note[4]),anchor="sw")
         self.create_text(0,0,text=str(self.page+self.number)+self.text,anchor="nw")
@@ -168,7 +167,6 @@ class ChartEditor(Canvas):
                 self.notes.append([self.lineBeginX/self.canvasResW,self.lineEndX/self.canvasResW,1-self.lineBeginY/self.canvasResH,self.selectedNote,self.mpm])
                 startX=min(self.lineBeginX/self.canvasResW,self.lineEndX/self.canvasResW)
                 endX=max(self.lineBeginX/self.canvasResW,self.lineEndX/self.canvasResW)
-                print([startX,endX,1-self.lineBeginY/self.canvasResH,self.selectedNote,self.mpm])
         else:#erase
             lineBeginX = self.lineBeginX/self.canvasResW
             lineBeginY = self.lineBeginY/self.canvasResH
