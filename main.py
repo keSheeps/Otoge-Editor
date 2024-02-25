@@ -3,7 +3,7 @@ import convert
 from tkinter import *
 from tkinter import ttk
 import pickle
-from os.path import dirname
+from os.path import dirname,basename
 import subprocess
 
 root = Tk()
@@ -199,7 +199,7 @@ def file_save_pickle():
 def preview():
     file_save_pickle()
     convert.compile(str(dirname(const.EXE_DIR)),0)
-    subprocess.run(r'cd "'+dirname(const.EXE_DIR)+'" & "'+const.EXE_DIR+'"',shell=True)
+    subprocess.run(r'cd "'+dirname(const.EXE_DIR)+'" & ".\\'+basename(const.EXE_DIR)+'"',shell=True)
 
 controlpanel = ControlPanel(master=root,update=updateAll)
 controlpanel.grid()
