@@ -14,6 +14,8 @@ title:
 composer:
 /designer:譜面作者名
 designer:
+/level:レベル(数値)
+level:1
 /wav:音声ファイルのパス
 wav:test.wav
 /jacket:絵のファイルのパス
