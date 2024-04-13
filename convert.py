@@ -16,6 +16,8 @@ composer:
 designer:
 /wav:音声ファイルのパス
 wav:test.wav
+/jacket:絵のファイルのパス
+jacket:test.png
 /offset:ノートのタイミングを -:早くする +:遅くする (単位[s])
 offset:""")
         dest.write(offset)
