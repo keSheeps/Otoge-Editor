@@ -15,4 +15,4 @@ IS_SNAP_ENABLED=True
 DIV_IN_MEASURE=4
 DIV_IN_LINE=4
 #files
-EXE_DIR=r'..\App\Otoge(debug).exe'
+EXE_DIR=r'..\Player\Otoge.exe'

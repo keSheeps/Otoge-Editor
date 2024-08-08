@@ -4,7 +4,7 @@ START_SEC=1
 #note([beginX,EndX,BeginY,noteKind,MPM])
 #chart[note,note,note,....]
 def compile(dir,offset):
-    with open(dir+r'\test.cht',mode='w') as dest:
+    with open(dir+r'\test.cht',mode='w',encoding='utf-8') as dest:
         with open('chart.pickle', mode='br') as fi:
             data = pickle.load(fi)
         allChart = [data[0],data[1]]
@@ -14,8 +14,14 @@ title:
 composer:
 /designer:譜面作者名
 designer:
+/level:レベル(数値)
+level:1
 /wav:音声ファイルのパス
 wav:test.wav
+/jacket:絵のファイルのパス
+jacket:
+/tracesvol:Trace_sの音量(0~1)
+tracesvol:0.5
 /offset:ノートのタイミングを -:早くする +:遅くする (単位[s])
 offset:""")
         dest.write(offset)

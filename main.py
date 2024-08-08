@@ -4,7 +4,10 @@ from tkinter import *
 from tkinter import ttk
 import pickle
 from os.path import dirname,basename
+import os
 import subprocess
+import uuid
+import shutil
 
 root = Tk()
 root.geometry(str(const.MAIN_RES_W)+"x"+str(const.MAIN_RES_H+const.CHART_Y))
@@ -195,12 +198,14 @@ def file_open_pickle():
         controlpanel.offsetEntry.insert(0,chart[2])
     updateAll(0,0,0)
 def file_save_pickle():
+    if(os.path.isfile('chart.pickle')):
+        shutil.copy('chart.pickle', str(uuid.uuid4())+'.bak.pickle')
     with open('chart.pickle', mode='wb') as fo:
         pickle.dump([chartLower,chartUpper,controlpanel.offsetEntry.get()], fo)
 def preview():
     file_save_pickle()
     convert.compile(str(dirname(const.EXE_DIR)),controlpanel.offsetEntry.get())
-    subprocess.run(r'cd "'+dirname(const.EXE_DIR)+'" & ".\\'+basename(const.EXE_DIR)+'"',shell=True)
+    subprocess.run(r'cd "'+dirname(const.EXE_DIR)+'" & ".\\'+basename(const.EXE_DIR)+'" test.cht 1 '+str(controlpanel.page),shell=True)################実行
 
 controlpanel = ControlPanel(master=root,update=updateAll)
 controlpanel.grid()
