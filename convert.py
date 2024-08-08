@@ -15,17 +15,13 @@ composer:
 /designer:譜面作者名
 designer:
 /level:レベル(数値)
-level:1
+level:
 /wav:音声ファイルのパス
 wav:test.wav
 /jacket:絵のファイルのパス
-<<<<<<< HEAD
 jacket:
 /tracesvol:Trace_sの音量(0~1)
 tracesvol:0.5
-=======
-jacket:test.png
->>>>>>> 0bbb1c27c716c8b25e57cba4a8955ebe0a7ef48e
 /offset:ノートのタイミングを -:早くする +:遅くする (単位[s])
 offset:""")
         dest.write(offset)
