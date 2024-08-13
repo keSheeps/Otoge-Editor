@@ -167,9 +167,9 @@ class ChartEditor(Canvas):
             if(self.isSnapEnabled):
                 self.lineEndX=round(self.lineEndX/self.lineDivW)*self.lineDivW
             if(self.lineBeginX!=self.lineEndX):
-                self.notes.append([self.lineBeginX/self.canvasResW,self.lineEndX/self.canvasResW,1-self.lineBeginY/self.canvasResH,self.selectedNote,self.mpm])
                 startX=min(self.lineBeginX/self.canvasResW,self.lineEndX/self.canvasResW)
                 endX=max(self.lineBeginX/self.canvasResW,self.lineEndX/self.canvasResW)
+                self.notes.append([startX,endX,1-self.lineBeginY/self.canvasResH,self.selectedNote,self.mpm])
         else:#erase
             lineBeginX = self.lineBeginX/self.canvasResW
             lineBeginY = self.lineBeginY/self.canvasResH
